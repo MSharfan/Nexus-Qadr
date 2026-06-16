@@ -1,0 +1,14 @@
+{
+  "gstin": null,
+  "pan": null,
+  "bank_account": null,
+  "cancelled_cheque": null,
+  "email": null,
+  "phone": null,
+  "business_type": "partnership",
+  "additional": {
+    "partnership_cert": "blob:http://localhost:3000/fd61a69d-f344-4187-9064-8bfab4deba21"
+  },
+  "pickup_address": null,
+  "product_listed": false
+}
