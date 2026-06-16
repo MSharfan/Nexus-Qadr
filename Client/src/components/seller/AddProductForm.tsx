@@ -229,7 +229,7 @@ const AddProductPage: React.FC = () => {
         const fd = new FormData();
         fd.append("image", file);
 
-        const res = await fetch(`${(window as any).__env?.API_URL || "http://localhost:5000"}/product/upload-image`, {
+        const res = await fetch(`${(window as any).__env?.API_URL || "import.meta.env.VITE_API_URL"}/product/upload-image`, {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: fd,
