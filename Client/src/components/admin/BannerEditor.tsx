@@ -26,6 +26,7 @@ const BannerEditor: React.FC = () => {
   const [textAlign, setTextAlign] = React.useState<"left" | "center" | "right">("left");
   const [paddingLarge, setPaddingLarge] = React.useState<boolean>(true);
   const [rounded, setRounded] = React.useState<boolean>(true);
+  const [layout, setLayout] = React.useState<"overlay" | "split-50">("overlay");
 
   React.useEffect(() => {
     let mounted = true;
@@ -49,6 +50,7 @@ const BannerEditor: React.FC = () => {
           setTextAlign(b.text_align ?? b.textAlign ?? "left");
           setPaddingLarge(Boolean(b.padding_large ?? b.paddingLarge ?? true));
           setRounded(Boolean(b.rounded ?? true));
+          setLayout(b.layout ?? "overlay");
         }
       } catch (e) {
         console.error(e);
@@ -83,6 +85,7 @@ const BannerEditor: React.FC = () => {
         text_align: textAlign,
         padding_large: paddingLarge,
         rounded,
+        layout,
       };
 
       await bannerApi.update(payload);
@@ -198,8 +201,12 @@ const BannerEditor: React.FC = () => {
                 <label className="block mb-2 text-sm">Text alignment</label>
                 <select value={textAlign} onChange={(e) => setTextAlign(e.target.value as any)} className="w-full p-2 rounded bg-transparent border mb-4">
                   <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
+                </select>
+
+                <label className="block mb-2 text-sm">Layout</label>
+                <select value={layout} onChange={(e) => setLayout(e.target.value as any)} className="w-full p-2 rounded bg-transparent border mb-4">
+                  <option value="overlay">Overlay (Image over gradient)</option>
+                  <option value="split-50">50/50 Split (Gradient left, Image right)</option>
                 </select>
 
                 <div className="flex items-center gap-4 mb-4">
@@ -252,32 +259,44 @@ const BannerEditor: React.FC = () => {
                       <div className={`relative z-10 max-w-md text-white ${textAlign === 'center' ? 'text-center mx-auto' : textAlign === 'right' ? 'text-right ml-auto' : 'text-left'}`}>
                         <h2 className="text-3xl font-bold mb-2">{title || 'Your title here'}</h2>
                         <p className="opacity-90 mb-4">{subtitle || 'Subtitle goes here'}</p>
-                        {ctaText && (
-                          <a href={ctaUrl || '#'} className="inline-block bg-white text-[#0A0A0A] px-4 py-2 rounded shadow">{ctaText}</a>
+                        {(ctaText || ctaUrl) && (
+                          <a
+                            href={ctaUrl || '#'}
+                            className="inline-block bg-white text-[#0A0A0A] px-4 py-2 rounded shadow cursor-pointer"
+                            aria-label={ctaText || 'Shop now'}
+                          >
+                            {ctaText || 'Shop now'}
+                          </a>
                         )}
                       </div>
 
                       {/* Image area (positioned based on selection) */}
                       {imageUrl && imagePosition !== 'center' && (
                         <div className={`relative z-10 flex-shrink-0 ${imagePosition === 'left' ? 'mr-4' : 'ml-4'}`}>
-                          <img
-                            src={imageUrl}
-                            alt="banner"
-                            className={`${imageSize === 'small' ? 'h-24' : imageSize === 'large' ? 'h-56' : 'h-40'} object-cover rounded`}
-                          />
+                          <a href={ctaUrl || '#'} className="block cursor-pointer" aria-label={ctaText || 'Banner link'}>
+                            <img
+                              src={imageUrl}
+                              alt="banner"
+                              className={`${imageSize === 'small' ? 'h-24' : imageSize === 'large' ? 'h-56' : 'h-40'} object-cover rounded`}
+                            />
+                          </a>
                         </div>
                       )}
 
                       {/* Center image option */}
                       {imageUrl && imagePosition === 'center' && (
-                        <div className="absolute inset-0 flex items-center justify-center z-0">
-                          <img src={imageUrl} alt="banner" className="object-contain opacity-90 h-44" />
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
+                          <a href={ctaUrl || '#'} className="block cursor-pointer" aria-label={ctaText || 'Banner link'}>
+                            <img src={imageUrl} alt="banner" className="object-contain opacity-90 h-44" />
+                          </a>
                         </div>
                       )}
 
                       {/* Mobile image preview (small badge) */}
                       {mobileImageUrl && (
-                        <img src={mobileImageUrl} alt="mobile" className="hidden md:block relative z-10 h-14 w-14 object-cover rounded-full ml-4" />
+                        <a href={ctaUrl || '#'} className="hidden md:inline-block relative z-10 h-14 w-14 ml-4 rounded-full overflow-hidden cursor-pointer" aria-label={ctaText || 'Mobile banner link'}>
+                          <img src={mobileImageUrl} alt="mobile" className="h-14 w-14 object-cover rounded-full" />
+                        </a>
                       )}
                     </div>
                   </div>

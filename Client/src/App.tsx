@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
 /* ---------- PRE-AUTH ---------- */
-import SplashScreen from "./components/preauth/SplashScreen";
 import OnboardingScreen from "./components/preauth/OnboardingScreen";
 import AuthPage from "./components/preauth/AuthPage";
 import ForgotPassword from "./components/auth/ForgotPasswordPage";
@@ -55,16 +54,6 @@ import SellerOnly from "./routes/SellerOnly";
 import AdminOnly from "./routes/AdminOnly";
 
 export default function App() {
-  const [booting, setBooting] = React.useState(true);
-
-
-  React.useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 2000);
-    return () => clearTimeout(t);
-  }, []);
-
-  if (booting) return <SplashScreen />;
-
   return (
     <>
       <Routes>

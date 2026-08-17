@@ -25,6 +25,15 @@ export async function readBanner() {
       gradientFrom: '#0D47A1',
       gradientTo: '#00B0FF',
       image_url: null,
+      mobile_image_url: null,
+      cta_text: null,
+      cta_url: null,
+      image_position: 'right',
+      image_size: 'medium',
+      overlay_opacity: 40,
+      text_align: 'left',
+      padding_large: true,
+      rounded: true,
       updated_at: new Date().toISOString(),
     };
   }

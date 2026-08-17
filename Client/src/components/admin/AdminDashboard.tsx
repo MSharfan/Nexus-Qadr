@@ -11,14 +11,13 @@ interface AdminSummary {
   sellers?: number;
   total_orders?: number;
   total_revenue?: number;
+  total_products?: number;
 }
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [data, setData] = React.useState<AdminSummary | null>(null);
-  const [productCount, setProductCount] = React.useState<number | null>(null);
-  const [ordersCount, setOrdersCount] = React.useState<number | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -33,27 +32,6 @@ const AdminDashboard: React.FC = () => {
 
         const res = await request<AdminSummary>("/dashboard/admin/overview");
         setData(res);
-
-        // separately fetch product count (server doesn't return it)
-        try {
-          const products = await request<any[]>('/product');
-          setProductCount(Array.isArray(products) ? products.length : null);
-        } catch (e) {
-          setProductCount(null);
-        }
-        // fetch orders count: prefer admin endpoint, avoid noisy 404s
-        try {
-          const ords = await request<any[]>('/admin/orders', { suppressToast: true, allowNotFound: true });
-          if (Array.isArray(ords)) {
-            setOrdersCount(ords.length);
-          } else {
-            // fallback to overview-provided value
-            setOrdersCount(null);
-          }
-        } catch (e) {
-          // if the admin endpoint is not available, don't spam console — use overview value
-          setOrdersCount(null);
-        }
       } catch (e) {
         console.error(e);
         setError("Failed to load admin dashboard");
@@ -113,7 +91,7 @@ const AdminDashboard: React.FC = () => {
             <StatCard
               icon={<ShoppingBag />}
               label="Orders"
-              value={ordersCount ?? data?.total_orders ?? "—"}
+              value={data?.total_orders ?? "—"}
               onClick={() => navigate("/admin/orders")}
             />
 

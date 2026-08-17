@@ -19,6 +19,52 @@ import { toastSuccess, toastError } from "../../utils/toast";
 
 import { productApi, cartApi, wishlistApi } from "../../config/api";
 
+const ProductDetailsSkeleton: React.FC = () => (
+  <div className="min-h-screen flex flex-col">
+    <Header />
+    <main className="flex-1 bg-gray-50 dark:bg-[#0A0A0A]">
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <div className="w-40 h-8 rounded-full home-skeleton" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-8 border border-border space-y-4">
+            <div className="aspect-square rounded-xl overflow-hidden home-skeleton" />
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-16 rounded-xl home-skeleton" />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-8 border border-border space-y-4">
+              <div className="h-10 rounded-xl home-skeleton w-3/4" />
+              <div className="h-6 rounded-xl home-skeleton w-1/2" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-10 rounded-xl home-skeleton" />
+                <div className="h-10 rounded-xl home-skeleton" />
+                <div className="h-10 rounded-xl home-skeleton" />
+              </div>
+              <div className="h-8 rounded-xl home-skeleton w-1/3" />
+              <div className="h-20 rounded-xl home-skeleton" />
+              <div className="flex gap-3">
+                <div className="flex-1 h-12 rounded-xl home-skeleton" />
+                <div className="w-14 h-12 rounded-xl home-skeleton" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="h-24 rounded-xl home-skeleton" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <Footer />
+  </div>
+);
+
 const ProductDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -374,11 +420,7 @@ const ProductDetailsPage: React.FC = () => {
      STATES
   =========================== */
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading product…
-      </div>
-    );
+    return <ProductDetailsSkeleton />;
   }
 
   if (error || !product) {

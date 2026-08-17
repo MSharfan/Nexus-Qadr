@@ -1,7 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
-
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { CategorySection } from "../shared/CategorySection";
@@ -10,34 +8,172 @@ import { ProductCard, Product } from "../shared/ProductCard";
 import { productApi, categoryApi, cartApi, bannerApi } from "../../config/api";
 import { toastError, toastSuccess } from "../../utils/toast";
 
+const skeletonTone = "home-skeleton";
+
+const HeaderSkeleton: React.FC = () => (
+  <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#0A0A0A]/95 backdrop-blur-sm border-b border-border shadow-sm">
+    <div className="container mx-auto px-4 py-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className={`${skeletonTone} h-6 w-32 rounded`} />
+        <div className="hidden md:block flex-1 max-w-2xl">
+          <div className={`${skeletonTone} h-12 w-full rounded-xl`} />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className={`${skeletonTone} h-10 w-10 rounded-full`} />
+          <div className={`${skeletonTone} h-10 w-10 rounded-full`} />
+        </div>
+      </div>
+      <div className="md:hidden mt-4">
+        <div className={`${skeletonTone} h-12 w-full rounded-xl`} />
+      </div>
+    </div>
+  </header>
+);
+
+const CategorySkeleton: React.FC = () => (
+  <div className="py-6 border-b border-border bg-white dark:bg-[#0A0A0A]">
+    <div className="container mx-auto px-4">
+      <div className="flex items-center gap-3 overflow-hidden pb-2">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className={`${skeletonTone} h-11 flex-shrink-0 rounded-xl ${
+              index === 0 ? "w-16" : index % 2 === 0 ? "w-36" : "w-28"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const BannerSkeleton: React.FC = () => (
+  <div className="mb-10 rounded-2xl border border-border bg-white p-8 dark:bg-[#1a1a1a] md:p-12">
+    <div className="flex min-h-40 items-center justify-between gap-8">
+      <div className="flex-1 space-y-5">
+        <div className={`${skeletonTone} h-10 w-full max-w-md rounded`} />
+        <div className={`${skeletonTone} h-5 w-full max-w-xl rounded`} />
+      </div>
+      <div className={`${skeletonTone} hidden h-32 w-48 rounded-lg md:block`} />
+    </div>
+  </div>
+);
+
+const TrendingSkeleton: React.FC = () => (
+  <div className="home-trending-skeleton" aria-label="Loading trending products">
+    <div className="home-skeleton home-trending-skeleton-title" />
+    <div className="home-trending-skeleton-row">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="home-trending-skeleton-item">
+          <div className="home-skeleton home-trending-skeleton-avatar" />
+          <div className="home-skeleton home-trending-skeleton-label" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const ProductGridSkeleton: React.FC = () => (
+  <div
+    className="grid items-stretch grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+    aria-label="Loading products"
+  >
+    {Array.from({ length: 8 }).map((_, index) => (
+      <div
+        key={index}
+        className="h-full overflow-hidden rounded-xl border border-border bg-white dark:bg-[#1a1a1a]"
+      >
+        <div className={`${skeletonTone} product-card-image-md w-full rounded-none`} />
+        <div className="space-y-3 p-3">
+          <div className={`${skeletonTone} h-4 w-4/5 rounded`} />
+          <div className={`${skeletonTone} h-4 w-3/5 rounded`} />
+          <div className="flex items-center gap-2">
+            <div className={`${skeletonTone} h-4 w-4 rounded-full`} />
+            <div className={`${skeletonTone} h-3 w-10 rounded`} />
+          </div>
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <div className={`${skeletonTone} h-5 w-20 rounded`} />
+            <div className="flex items-center gap-2">
+              <div className={`${skeletonTone} h-8 w-8 rounded-full sm:h-10 sm:w-10`} />
+              <div className={`${skeletonTone} h-8 w-8 rounded-full sm:h-10 sm:w-10`} />
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+const HOME_PAGE_CACHE_KEY = "nexus_qadr_home_cache_v1";
+
+type HomePageCache = {
+  products: Product[];
+  categories: Array<{ id: string; name: string }>;
+  banner: any | null;
+};
+
+const readHomePageCache = (): HomePageCache | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = sessionStorage.getItem(HOME_PAGE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as HomePageCache;
+    return parsed && Array.isArray(parsed.products) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeHomePageCache = (data: HomePageCache) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    sessionStorage.setItem(HOME_PAGE_CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore cache write failures
+  }
+};
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [products, setProducts] = React.useState<Product[]>([]);
+  const [products, setProducts] = React.useState<Product[]>(() => readHomePageCache()?.products ?? []);
   const [categories, setCategories] = React.useState<
     Array<{ id: string; name: string }>
-  >([]);
+  >(() => readHomePageCache()?.categories ?? []);
   const [selectedCategory, setSelectedCategory] = React.useState("all");
   const [carouselIndex, setCarouselIndex] = React.useState(0);
 
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(() => !readHomePageCache());
   const [error, setError] = React.useState<string | null>(null);
-  const [banner, setBanner] = React.useState<any | null>(null);
+  const [banner, setBanner] = React.useState<any | null>(() => readHomePageCache()?.banner ?? null);
 
   /* ===========================
      LOAD DATA
   =========================== */
   React.useEffect(() => {
+    let cancelled = false;
+
+    const cached = readHomePageCache();
+    if (cached) {
+      setProducts(cached.products);
+      setCategories(cached.categories);
+      setBanner(cached.banner ?? null);
+      setLoading(false);
+      setError(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [productRows, categoryRows, bannerObj] = await Promise.all([
+        const [productRows, categoryRows] = await Promise.all([
           productApi.getAll(),
           categoryApi.getAll(),
-          // banner is optional
-          bannerApi.get(),
         ]);
 
         // 🔒 SAFE PRODUCT MAPPING (ALIGN WITH SERVER)
@@ -110,18 +246,62 @@ const HomePage: React.FC = () => {
             })
             .filter(Boolean) as Array<{ id: string; name: string }>;
 
+        if (cancelled) return;
+
+        const nextCache: HomePageCache = {
+          products: mappedProducts,
+          categories: mappedCategories,
+          banner: null,
+        };
+
+        writeHomePageCache(nextCache);
         setProducts(mappedProducts);
         setCategories(mappedCategories);
-        setBanner(bannerObj ?? null);
       } catch (err) {
         console.error(err);
         setError("Failed to load products");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const cached = readHomePageCache();
+    if (cached?.banner) {
+      setBanner(cached.banner);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void bannerApi
+      .get()
+      .then((bannerObj) => {
+        if (!cancelled) {
+          setBanner(bannerObj ?? null);
+          const current = readHomePageCache();
+          if (current) {
+            writeHomePageCache({ ...current, banner: bannerObj ?? null });
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load banner", err);
+        if (!cancelled) setBanner(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /* ===========================
@@ -214,118 +394,183 @@ const HomePage: React.FC = () => {
   }, [loading]);
 
   /* ===========================
-     STATES
-  =========================== */
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading products…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
-      </div>
-    );
-  }
-
-  /* ===========================
      UI
   =========================== */
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {loading ? <HeaderSkeleton /> : <Header />}
 
-      <CategorySection
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
-
+      {loading ? (
+        <CategorySkeleton />
+      ) : (
+        <CategorySection
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          categories={categories}
+        />
+      )}
       <main className="flex-1 bg-gray-50 dark:bg-[#0A0A0A]">
         <div className="container mx-auto px-4 py-8">
           {/* HERO */}
-          <div
-            className={`rounded-2xl p-8 md:p-12 mb-10 text-white ${banner?.gradientFrom && banner?.gradientTo ? "" : "bg-gradient-to-r from-[#0D47A1] to-[#00B0FF]"}`}
-            style={
-              banner
-                ? {
-                    background: `linear-gradient(90deg, ${banner.gradientFrom || "#0D47A1"}, ${banner.gradientTo || "#00B0FF"})`,
-                  }
-                : undefined
-            }
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl md:text-4xl mb-4">
-                  {banner?.title ?? "Welcome to Nexus Qadr"}
-                </h2>
-                <p className="text-lg text-white/90">
-                  {banner?.subtitle ??
-                    "Discover products directly from verified sellers"}
-                </p>
+          {loading ? (
+            <BannerSkeleton />
+          ) : banner?.layout === "split-50" ? (
+            <div
+              className={`relative overflow-hidden mb-10 text-white flex h-[320px] md:h-[400px] ${banner?.rounded === false ? "" : "rounded-2xl"}`}
+            >
+              {/* Gradient Side (50%) */}
+              <div
+                className={`w-1/2 ${banner?.padding_large === false ? "p-6 md:p-8" : "p-8 md:p-12"} flex flex-col items-center justify-center`}
+                style={{
+                  background: `linear-gradient(135deg, ${banner.gradientFrom || banner.gradient_from || "#0D47A1"}, ${banner.gradientTo || banner.gradient_to || "#00B0FF"})`,
+                }}
+              >
+                <div className="max-w-xs text-center">
+                  <h2 className="text-xl md:text-2xl mb-3 font-semibold">
+                    {banner?.title ?? "Welcome to Nexus Qadr"}
+                  </h2>
+                  <p className="text-sm md:text-base text-white/90 mb-4">
+                    {banner?.subtitle ??
+                      "Discover products directly from verified sellers"}
+                  </p>
+                  {banner?.cta_text && (
+                    <a
+                      href={banner?.cta_url || "#"}
+                      className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-[#0A0A0A] hover:bg-gray-100 transition-colors"
+                    >
+                      {banner.cta_text}
+                    </a>
+                  )}
+                </div>
               </div>
+
+              {/* Image Side (50%) */}
               {banner?.image_url && (
-                <img
-                  src={banner.image_url}
-                  alt={banner.title ?? "banner"}
-                  className="hidden md:block w-48 h-32 object-cover rounded-lg ml-6"
-                />
+                <div className="w-1/2 overflow-hidden">
+                  <img
+                    src={banner.image_url}
+                    alt={banner?.title ?? "banner"}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               )}
             </div>
-          </div>
-
-          {/* TRENDING PRODUCTS (small cards) - compact horizontal "stories" strip */}
-          {featuredProducts.length > 0 && (
-            <div>
-              <h2 className="text-2xl mb-4 mt-6 flex items-center gap-2">
-                Trending Products<span aria-hidden="true">🔥</span>
-              </h2>
+          ) : (
             <div
-              ref={trendingRef}
-              className="w-full overflow-x-auto no-scrollbar mb-6"
-              aria-hidden={false}
+              className={`relative overflow-hidden rounded-2xl mb-10 text-white ${banner?.rounded === false ? "" : "rounded-2xl"}`}
+              style={
+                banner
+                  ? {
+                      background: `linear-gradient(90deg, ${banner.gradientFrom || banner.gradient_from || "#0D47A1"}, ${banner.gradientTo || banner.gradient_to || "#00B0FF"})`,
+                    }
+                  : undefined
+              }
             >
-              <div className="flex items-center gap-4 px-2 py-2">
-                {featuredProducts.map((product) => {
-                  const maxLabel = 14;
-                  const displayName =
-                    typeof product.name === "string" && product.name.length > maxLabel
-                      ? `${product.name.slice(0, maxLabel)}…`
-                      : product.name;
+              <div
+                className={`relative h-full min-h-[260px] ${banner?.padding_large === false ? "p-6 md:p-8" : "p-8 md:p-12"}`}
+                style={{
+                  background: banner?.image_url ? `linear-gradient(90deg, rgba(0,0,0,${(banner?.overlay_opacity ?? banner?.overlayOpacity ?? 40) / 100}), rgba(0,0,0,${(banner?.overlay_opacity ?? banner?.overlayOpacity ?? 40) / 100}))` : undefined,
+                }}
+              >
+                <div className="absolute inset-0">
+                  {banner?.image_url && (
+                    <img
+                      src={banner.image_url}
+                      alt={banner?.title ?? "banner"}
+                      className={`absolute inset-0 h-full w-full object-cover ${banner?.image_position === "center" ? "object-contain opacity-70" : "object-cover"}`}
+                      style={{ opacity: 0.85 }}
+                    />
+                  )}
+                </div>
 
-                  return (
-                    <button
-                      key={product.id}
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      title={product.name}
-                      className="flex-shrink-0 w-20 flex flex-col items-center focus:outline-none"
-                    >
-                      <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 dark:border-neutral-700 shadow-sm">
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100 dark:bg-neutral-800 flex items-center justify-center text-xs text-gray-500">
-                            N/A
-                          </div>
-                        )}
-                      </div>
+                <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(banner?.overlay_opacity ?? banner?.overlayOpacity ?? 40) / 100})` }} />
 
-                      <div className="mt-2 text-xs text-center truncate w-full">
-                        {displayName}
-                      </div>
-                    </button>
-                  );
-                })}
+                <div className={`relative z-10 flex h-full items-center justify-between gap-6 ${banner?.text_align === "center" ? "text-center justify-center" : banner?.text_align === "right" ? "text-right justify-between" : "text-left"}`}>
+                  <div className={`max-w-2xl ${banner?.text_align === "center" ? "mx-auto" : ""}`}>
+                    <h2 className="text-3xl md:text-4xl mb-4 font-semibold">
+                      {banner?.title ?? banner?.title ?? "Welcome to Nexus Qadr"}
+                    </h2>
+                    <p className="text-lg text-white/90">
+                      {banner?.subtitle ??
+                        "Discover products directly from verified sellers"}
+                    </p>
+                    {banner?.cta_text && (
+                      <a
+                        href={banner?.cta_url || "#"}
+                        className="inline-flex items-center rounded-full bg-white px-4 py-2 mt-4 text-sm font-medium text-[#0A0A0A]"
+                      >
+                        {banner.cta_text}
+                      </a>
+                    )}
+                  </div>
+
+                  {banner?.image_url && banner?.image_position !== "center" && (
+                    <div className={`hidden md:flex flex-shrink-0 ${banner?.image_position === "left" ? "order-first mr-6" : "ml-6"}`}>
+                      <img
+                        src={banner.image_url}
+                        alt={banner?.title ?? "banner"}
+                        className={`${banner?.image_size === "small" ? "h-24 w-24" : banner?.image_size === "large" ? "h-56 w-56" : "h-40 w-40"} object-cover rounded-lg shadow-lg"}`}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* TRENDING PRODUCTS (small cards) - compact horizontal "stories" strip */}
+          {loading ? (
+            <TrendingSkeleton />
+          ) : (
+            featuredProducts.length > 0 && (
+              <div>
+                <h2 className="text-2xl mb-4 mt-6 flex items-center gap-2">
+                  Trending Products<span aria-hidden="true">{"\uD83D\uDD25"}</span>
+                </h2>
+                <div
+                  ref={trendingRef}
+                  className="w-full overflow-x-auto no-scrollbar mb-6"
+                  aria-hidden={false}
+                >
+                  <div className="flex items-center gap-4 px-2 py-2">
+                    {featuredProducts.map((product) => {
+                      const maxLabel = 14;
+                      const displayName =
+                        typeof product.name === "string" && product.name.length > maxLabel
+                          ? `${product.name.slice(0, maxLabel)}...`
+                          : product.name;
+
+                      return (
+                        <button
+                          key={product.id}
+                          onClick={() => navigate(`/product/${product.id}`)}
+                          title={product.name}
+                          className="flex-shrink-0 w-20 flex flex-col items-center focus:outline-none"
+                        >
+                          <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 dark:border-neutral-700 shadow-sm">
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-100 dark:bg-neutral-800 flex items-center justify-center text-xs text-gray-500">
+                                N/A
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-2 text-xs text-center truncate w-full">
+                            {displayName}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
           )}
 
           {/* ALL PRODUCTS */}
@@ -337,7 +582,11 @@ const HomePage: React.FC = () => {
                   "All Products")}
             </h2>
 
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <ProductGridSkeleton />
+            ) : error ? (
+              <div className="text-center py-12 text-red-500">{error}</div>
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 No products found
               </div>

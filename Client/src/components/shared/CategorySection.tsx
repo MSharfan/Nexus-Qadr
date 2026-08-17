@@ -29,17 +29,24 @@ const iconMap: Record<string, React.ElementType> = {
 interface CategorySectionProps {
   selectedCategory?: string;
   onSelectCategory?: (categoryId: string) => void;
+  categories?: Category[];
 }
 
 export const CategorySection: React.FC<CategorySectionProps> = ({
   selectedCategory = "all",
   onSelectCategory,
+  categories: providedCategories,
 }) => {
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [fetchedCategories, setFetchedCategories] = React.useState<Category[]>([]);
+  const [loading, setLoading] = React.useState(!providedCategories);
 
   /* ---------------- LOAD CATEGORIES ---------------- */
   React.useEffect(() => {
+    if (providedCategories) {
+      setLoading(false);
+      return;
+    }
+
     const load = async () => {
       try {
         const rows: any[] = await categoryApi.getAll();
@@ -52,17 +59,19 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
               : "Category",
         }));
 
-        setCategories(mapped);
+        setFetchedCategories(mapped);
       } catch (err) {
         console.error("Failed to load categories", err);
-        setCategories([]);
+        setFetchedCategories([]);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, []);
+  }, [providedCategories]);
+
+  const categories = providedCategories ?? fetchedCategories;
 
   return (
     <div className="py-6 border-b border-border bg-white dark:bg-[#0A0A0A]">

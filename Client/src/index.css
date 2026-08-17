@@ -256,7 +256,6 @@
   }
 
   img, svg, video, canvas, audio, iframe, embed, object {
-    vertical-align: middle;
     display: block;
   }
 
@@ -635,6 +634,7 @@
   }
 
   .line-clamp-1 {
+    line-clamp: 1;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     display: -webkit-box;
@@ -642,6 +642,7 @@
   }
 
   .line-clamp-2 {
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     display: -webkit-box;
@@ -2574,4 +2575,111 @@ html {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(0, 176, 255, 0.25);
+}
+
+:root {
+  --home-skeleton-from: #eef1f5;
+  --home-skeleton-to: #f8fafc;
+  --home-skeleton-accent: #e5e7eb;
+}
+
+.dark {
+  --home-skeleton-from: #202020;
+  --home-skeleton-to: #2b2b2b;
+  --home-skeleton-accent: #1c1c1c;
+}
+
+.home-skeleton {
+  display: block;
+  background: linear-gradient(90deg, var(--home-skeleton-from) 0%, var(--home-skeleton-to) 45%, var(--home-skeleton-accent) 100%);
+  background-size: 220% 100%;
+  animation: home-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.home-trending-skeleton {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.home-trending-skeleton-title {
+  width: 14rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+}
+
+.home-trending-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.home-trending-skeleton-item {
+  width: 5rem;
+  flex: 0 0 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-trending-skeleton-avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+}
+
+.home-trending-skeleton-label {
+  width: 4rem;
+  height: 0.75rem;
+  margin-top: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+@keyframes home-skeleton-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+/* Skeleton helpers used by HomePage. Keep these explicit because this project uses a checked-in CSS bundle. */
+.h-11 {
+  height: 2.75rem;
+}
+
+.min-h-40 {
+  min-height: 10rem;
+}
+
+.w-3\/5 {
+  width: 60%;
+}
+
+.w-4\/5 {
+  width: 80%;
+}
+
+.max-w-xl {
+  max-width: 36rem;
+}
+.product-card-image-sm {
+  height: 15rem;
+}
+
+.product-card-image-md {
+  height: 16rem;
+}
+
+@media (max-width: 640px) {
+  .product-card-image-sm {
+    height: 12rem;
+  }
+
+  .product-card-image-md {
+    height: 13rem;
+  }
 }
