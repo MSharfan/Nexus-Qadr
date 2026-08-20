@@ -4,6 +4,7 @@ import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { CategorySection } from "../shared/CategorySection";
 import { ProductCard, Product } from "../shared/ProductCard";
+import HomepageBanner from "../shared/HomepageBanner";
 
 import { productApi, categoryApi, cartApi, bannerApi } from "../../config/api";
 import { toastError, toastSuccess } from "../../utils/toast";
@@ -275,14 +276,6 @@ const HomePage: React.FC = () => {
   React.useEffect(() => {
     let cancelled = false;
 
-    const cached = readHomePageCache();
-    if (cached?.banner) {
-      setBanner(cached.banner);
-      return () => {
-        cancelled = true;
-      };
-    }
-
     void bannerApi
       .get()
       .then((bannerObj) => {
@@ -414,108 +407,8 @@ const HomePage: React.FC = () => {
           {/* HERO */}
           {loading ? (
             <BannerSkeleton />
-          ) : banner?.layout === "split-50" ? (
-            <div
-              className={`relative overflow-hidden mb-10 text-white flex h-[320px] md:h-[400px] ${banner?.rounded === false ? "" : "rounded-2xl"}`}
-            >
-              {/* Gradient Side (50%) */}
-              <div
-                className={`w-1/2 ${banner?.padding_large === false ? "p-6 md:p-8" : "p-8 md:p-12"} flex flex-col items-center justify-center`}
-                style={{
-                  background: `linear-gradient(135deg, ${banner.gradientFrom || banner.gradient_from || "#0D47A1"}, ${banner.gradientTo || banner.gradient_to || "#00B0FF"})`,
-                }}
-              >
-                <div className="max-w-xs text-center">
-                  <h2 className="text-xl md:text-2xl mb-3 font-semibold">
-                    {banner?.title ?? "Welcome to Nexus Qadr"}
-                  </h2>
-                  <p className="text-sm md:text-base text-white/90 mb-4">
-                    {banner?.subtitle ??
-                      "Discover products directly from verified sellers"}
-                  </p>
-                  {banner?.cta_text && (
-                    <a
-                      href={banner?.cta_url || "#"}
-                      className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-[#0A0A0A] hover:bg-gray-100 transition-colors"
-                    >
-                      {banner.cta_text}
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Image Side (50%) */}
-              {banner?.image_url && (
-                <div className="w-1/2 overflow-hidden">
-                  <img
-                    src={banner.image_url}
-                    alt={banner?.title ?? "banner"}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
-            </div>
           ) : (
-            <div
-              className={`relative overflow-hidden rounded-2xl mb-10 text-white ${banner?.rounded === false ? "" : "rounded-2xl"}`}
-              style={
-                banner
-                  ? {
-                      background: `linear-gradient(90deg, ${banner.gradientFrom || banner.gradient_from || "#0D47A1"}, ${banner.gradientTo || banner.gradient_to || "#00B0FF"})`,
-                    }
-                  : undefined
-              }
-            >
-              <div
-                className={`relative h-full min-h-[260px] ${banner?.padding_large === false ? "p-6 md:p-8" : "p-8 md:p-12"}`}
-                style={{
-                  background: banner?.image_url ? `linear-gradient(90deg, rgba(0,0,0,${(banner?.overlay_opacity ?? banner?.overlayOpacity ?? 40) / 100}), rgba(0,0,0,${(banner?.overlay_opacity ?? banner?.overlayOpacity ?? 40) / 100}))` : undefined,
-                }}
-              >
-                <div className="absolute inset-0">
-                  {banner?.image_url && (
-                    <img
-                      src={banner.image_url}
-                      alt={banner?.title ?? "banner"}
-                      className={`absolute inset-0 h-full w-full object-cover ${banner?.image_position === "center" ? "object-contain opacity-70" : "object-cover"}`}
-                      style={{ opacity: 0.85 }}
-                    />
-                  )}
-                </div>
-
-                <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(banner?.overlay_opacity ?? banner?.overlayOpacity ?? 40) / 100})` }} />
-
-                <div className={`relative z-10 flex h-full items-center justify-between gap-6 ${banner?.text_align === "center" ? "text-center justify-center" : banner?.text_align === "right" ? "text-right justify-between" : "text-left"}`}>
-                  <div className={`max-w-2xl ${banner?.text_align === "center" ? "mx-auto" : ""}`}>
-                    <h2 className="text-3xl md:text-4xl mb-4 font-semibold">
-                      {banner?.title ?? banner?.title ?? "Welcome to Nexus Qadr"}
-                    </h2>
-                    <p className="text-lg text-white/90">
-                      {banner?.subtitle ??
-                        "Discover products directly from verified sellers"}
-                    </p>
-                    {banner?.cta_text && (
-                      <a
-                        href={banner?.cta_url || "#"}
-                        className="inline-flex items-center rounded-full bg-white px-4 py-2 mt-4 text-sm font-medium text-[#0A0A0A]"
-                      >
-                        {banner.cta_text}
-                      </a>
-                    )}
-                  </div>
-
-                  {banner?.image_url && banner?.image_position !== "center" && (
-                    <div className={`hidden md:flex flex-shrink-0 ${banner?.image_position === "left" ? "order-first mr-6" : "ml-6"}`}>
-                      <img
-                        src={banner.image_url}
-                        alt={banner?.title ?? "banner"}
-                        className={`${banner?.image_size === "small" ? "h-24 w-24" : banner?.image_size === "large" ? "h-56 w-56" : "h-40 w-40"} object-cover rounded-lg shadow-lg"}`}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <HomepageBanner banner={banner} className="nq-storefront-banner" />
           )}
 
           {/* TRENDING PRODUCTS (small cards) - compact horizontal "stories" strip */}

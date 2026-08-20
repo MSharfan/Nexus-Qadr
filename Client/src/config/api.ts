@@ -396,6 +396,28 @@ export const bannerApi = {
   get: () => request<any>(`/banner`, { suppressToast: true, allowNotFound: true }),
   // PUT /banner (admin)
   update: (data: any) => request(`/banner`, { method: 'PUT', body: data }),
+  uploadImage: async (file: File) => {
+    const token = getToken();
+    const body = new FormData();
+    body.append("image", file);
+
+    const response = await fetch(`${BASE_URL}/banner/upload-image`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body,
+    });
+
+    if (!response.ok) {
+      let message = "Image upload failed";
+      try {
+        const data = await response.json();
+        message = data?.error || data?.message || message;
+      } catch {}
+      throw new Error(message);
+    }
+
+    return response.json() as Promise<{ image_url: string; public_id: string }>;
+  },
 };
 
 

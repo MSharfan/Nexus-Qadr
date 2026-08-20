@@ -15,6 +15,7 @@ export const updateBanner = async (req, res) => {
     const payload = req.body || {};
 
     const banner = {
+      ...payload,
       title: payload.title ?? null,
       subtitle: payload.subtitle ?? null,
       gradientFrom: payload.gradientFrom ?? payload.gradient_from ?? null,
