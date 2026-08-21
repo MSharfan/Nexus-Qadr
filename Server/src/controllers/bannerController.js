@@ -16,6 +16,8 @@ export const updateBanner = async (req, res) => {
 
     const banner = {
       ...payload,
+      show_banner: payload.show_banner ?? payload.is_enabled ?? payload.enabled ?? true,
+      is_enabled: payload.is_enabled ?? payload.show_banner ?? payload.enabled ?? true,
       title: payload.title ?? null,
       subtitle: payload.subtitle ?? null,
       gradientFrom: payload.gradientFrom ?? payload.gradient_from ?? null,

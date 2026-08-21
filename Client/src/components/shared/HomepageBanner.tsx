@@ -5,6 +5,9 @@ export type BannerElement = "title" | "subtitle" | "image" | "button" | "canvas"
 export type HomepageBannerData = {
   title?: string | null;
   subtitle?: string | null;
+  is_enabled?: boolean | null;
+  enabled?: boolean | null;
+  show_banner?: boolean | null;
   gradientFrom?: string | null;
   gradientTo?: string | null;
   gradient_from?: string | null;
@@ -78,9 +81,13 @@ const selectClass = (element: BannerElement, selected?: BannerElement) =>
 
 export const normalizeBanner = (banner?: HomepageBannerData | null): HomepageBannerData => {
   const b = { ...fallbackBanner, ...(banner ?? {}) };
+  const isVisible = asBoolean(b.show_banner ?? b.is_enabled ?? b.enabled ?? true, true);
 
   return {
     ...b,
+    show_banner: isVisible,
+    is_enabled: isVisible,
+    enabled: isVisible,
     gradientFrom: asString(b.gradientFrom ?? b.gradient_from, fallbackBanner.gradientFrom!),
     gradientTo: asString(b.gradientTo ?? b.gradient_to, fallbackBanner.gradientTo!),
     image_url: asString(b.image_url ?? b.imageUrl, ""),

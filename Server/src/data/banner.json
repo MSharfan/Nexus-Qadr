@@ -1,14 +1,16 @@
 {
-  "title": "Limited Time Sale",
+  "title": "Limited Time Sales",
   "subtitle": "Fresh deals from verified sellers are live now.",
+  "is_enabled": false,
+  "show_banner": false,
   "gradientFrom": "#0A0A0A",
   "gradientTo": "#00B0FF",
   "image_url": "https://res.cloudinary.com/dlrnpbjza/image/upload/v1/nexus_qadr_products/nn4siyvysne6kp78sj47?_a=BAMAPqIM0",
   "mobile_image_url": "https://res.cloudinary.com/dlrnpbjza/image/upload/v1/nexus_qadr_products/nn4siyvysne6kp78sj47?_a=BAMAPqIM0",
   "cta_text": "Shop deals",
   "cta_url": "http://localhost:3000/product/53227b7a-3ecf-4a26-8842-5f44b56d3007",
-  "image_position": "center",
-  "image_size": "small",
+  "image_position": "right",
+  "image_size": "medium",
   "overlay_opacity": 24,
   "text_align": "left",
   "padding_large": true,
@@ -48,7 +50,7 @@
   "image_object_fit": "cover",
   "image_radius": 16,
   "image_shadow": false,
-  "overlay_enabled": false,
+  "overlay_enabled": true,
   "overlay_color": "#000000",
   "overlay_gradient_enabled": false,
   "overlay_gradient_from": "#000000",
@@ -70,5 +72,6 @@
   "banner_border_width": 0,
   "banner_opacity": 100,
   "animation": "float",
-  "updated_at": "2026-08-20T17:56:04.419Z"
+  "updated_at": "2026-08-21T18:31:36.976Z",
+  "enabled": true
 }

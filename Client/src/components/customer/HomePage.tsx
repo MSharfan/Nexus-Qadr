@@ -408,7 +408,11 @@ const HomePage: React.FC = () => {
           {loading ? (
             <BannerSkeleton />
           ) : (
-            <HomepageBanner banner={banner} className="nq-storefront-banner" />
+            banner &&
+            (banner.show_banner ?? banner.is_enabled ?? banner.enabled ?? true) !== false &&
+            selectedCategory === "all" && (
+              <HomepageBanner banner={banner} className="nq-storefront-banner" />
+            )
           )}
 
           {/* TRENDING PRODUCTS (small cards) - compact horizontal "stories" strip */}

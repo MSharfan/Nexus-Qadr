@@ -20,6 +20,8 @@ export async function readBanner() {
   } catch (err) {
     // return default banner
     return {
+      is_enabled: true,
+      show_banner: true,
       title: 'Welcome to Nexus Qadr',
       subtitle: 'Discover products directly from verified sellers',
       gradientFrom: '#0D47A1',

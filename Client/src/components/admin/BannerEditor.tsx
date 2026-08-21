@@ -35,6 +35,8 @@ type PreviewMode = "desktop" | "mobile";
 type BannerDraft = HomepageBannerData & {
   title: string;
   subtitle: string;
+  is_enabled: boolean;
+  show_banner: boolean;
   gradientFrom: string;
   gradientTo: string;
   image_url: string | null;
@@ -55,6 +57,8 @@ const HOME_PAGE_CACHE_KEY = "nexus_qadr_home_cache_v1";
 const defaultBanner: BannerDraft = {
   title: "Welcome to Nexus Qadr",
   subtitle: "Discover products directly from verified sellers",
+  is_enabled: true,
+  show_banner: true,
   gradientFrom: "#0D47A1",
   gradientTo: "#00B0FF",
   image_url: null,
@@ -283,12 +287,22 @@ const colorSwatches = [
   "#F59E0B",
 ];
 
+const getVisibilityFlag = (value: Partial<BannerDraft> | HomepageBannerData | null | undefined) => {
+  const source = value as Record<string, unknown> | null | undefined;
+  const next = Boolean(source?.show_banner ?? source?.is_enabled ?? source?.enabled ?? true);
+  return next;
+};
+
 const mergeLoadedBanner = (value: any): BannerDraft => {
   const normalized = normalizeBanner(value);
+  const visibility = getVisibilityFlag(normalized);
+
   return {
     ...defaultBanner,
     ...value,
     ...normalized,
+    show_banner: visibility,
+    is_enabled: visibility,
     title: String(normalized.title ?? defaultBanner.title),
     subtitle: String(normalized.subtitle ?? defaultBanner.subtitle),
     image_url: normalized.image_url ? String(normalized.image_url) : null,
@@ -649,8 +663,11 @@ const BannerEditor: React.FC = () => {
 
     try {
       setSaving(true);
+      const visibility = getVisibilityFlag(draft);
       const payload = {
         ...draft,
+        show_banner: visibility,
+        is_enabled: visibility,
         title: draft.title.trim() || defaultBanner.title,
         subtitle: draft.subtitle.trim(),
         gradientFrom: draft.gradientFrom,
@@ -829,6 +846,7 @@ const BannerEditor: React.FC = () => {
               </PanelSection>
 
               <PanelSection title="Content" icon={<Type size={16} />} defaultOpen>
+                <ToggleField label="Enable banner on storefront" checked={Boolean(draft.show_banner ?? draft.is_enabled)} onChange={(show_banner) => updateDraft({ show_banner, is_enabled: show_banner })} />
                 <TextField label="Banner title" value={draft.title} onChange={(title) => updateDraft({ title })} />
                 <TextField label="Subtitle / description" value={draft.subtitle} multiline onChange={(subtitle) => updateDraft({ subtitle })} />
                 <TextField label="CTA button text" value={draft.cta_text ?? ""} onChange={(cta_text) => updateDraft({ cta_text: cta_text || null })} />
