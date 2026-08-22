@@ -114,11 +114,19 @@ export const authApi = {
       auth: false,
     }),
 
+  validateAdminSetupKey: (setupKey: string) =>
+    request<{ valid: boolean; message?: string }>("/auth/admin/validate-setup-key", {
+      method: "POST",
+      body: { setupKey },
+      auth: false,
+    }),
+
   register: (data: {
     name: string;
     email: string;
     password: string;
-    role: "customer" | "seller";
+    role: "customer" | "seller" | "admin";
+    setupKey?: string;
   }) =>
     request<{ token: string }>("/auth/register", {
       method: "POST",

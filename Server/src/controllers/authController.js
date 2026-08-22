@@ -10,17 +10,53 @@ import {
 const normalizeEmail = (email) => email.trim().toLowerCase();
 
 /* =========================================================
+   ADMIN SETUP KEY VALIDATION
+========================================================= */
+export const validateAdminSetupKey = async (req, res) => {
+  const { setupKey } = req.body || {};
+  const expectedAdminSetupKey = process.env.ADMIN_SETUP_KEY;
+
+  if (!expectedAdminSetupKey) {
+    return res.status(500).json({
+      message: "Admin setup key is not configured on the server"
+    });
+  }
+
+  if (!setupKey || String(setupKey).trim() !== expectedAdminSetupKey) {
+    return res.status(403).json({
+      valid: false,
+      message: "Invalid or missing admin setup key"
+    });
+  }
+
+  return res.json({ valid: true, message: "Admin setup key valid" });
+};
+
+/* =========================================================
    REGISTER
 ========================================================= */
 export const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, setupKey } = req.body;
+  const normalizedRole = String(role || "").trim().toLowerCase();
 
-  if (!name || !email || !password || !role) {
+  if (!name || !email || !password || !normalizedRole) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   if (!validateStrongPassword(password)) {
     return res.status(400).json({ message: PASSWORD_REQUIREMENTS_MESSAGE });
+  }
+
+  if (normalizedRole === "admin") {
+    const expectedAdminSetupKey = process.env.ADMIN_SETUP_KEY;
+
+    if (!expectedAdminSetupKey) {
+      return res.status(500).json({ message: "Admin setup key is not configured on the server" });
+    }
+
+    if (!setupKey || String(setupKey).trim() !== expectedAdminSetupKey) {
+      return res.status(403).json({ message: "Invalid or missing admin setup key" });
+    }
   }
 
   const emailNormalized = normalizeEmail(email);
@@ -56,7 +92,7 @@ export const register = async (req, res) => {
     // 3️⃣ Check role duplication
     const roleCheck = await client.query(
       "SELECT 1 FROM user_roles WHERE user_id = $1 AND role = $2",
-      [userId, role]
+      [userId, normalizedRole]
     );
 
     if (roleCheck.rowCount > 0) {
@@ -69,7 +105,7 @@ export const register = async (req, res) => {
     // 4️⃣ Assign role
     await client.query(
       "INSERT INTO user_roles (user_id, role) VALUES ($1, $2)",
-      [userId, role]
+      [userId, normalizedRole]
     );
 
     await client.query("COMMIT");
