@@ -133,6 +133,19 @@ export const authApi = {
       body: data,
       auth: false,
     }),
+  verifyEmail: (token: string) =>
+    request<{ message: string }>("/auth/verify-email", {
+      method: "POST",
+      body: { token },
+      auth: false,
+    }),
+
+  resendVerification: (email: string) =>
+    request<{ message: string }>("/auth/resend-verification", {
+      method: "POST",
+      body: { email },
+      auth: false,
+    }),
 };
 
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { passwordApi } from "../../config/api";
 import {
@@ -10,10 +10,12 @@ import {
 const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { token: pathToken } = useParams();
 
-  const token = params.get("token");
+  const token = params.get("token") || pathToken || null;
 
   const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
   const handleSubmit = async () => {
@@ -24,6 +26,11 @@ const ResetPasswordPage: React.FC = () => {
 
     if (!validateStrongPassword(password)) {
       toast.error(PASSWORD_REQUIREMENTS_MESSAGE);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -56,6 +63,15 @@ const ResetPasswordPage: React.FC = () => {
         <p className="mb-4 text-xs text-muted-foreground">
           {PASSWORD_REQUIREMENTS_MESSAGE}
         </p>
+
+        <input
+          type="password"
+          placeholder="Confirm new password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="w-full border border-border p-3 rounded mb-4 bg-secondary"
+          minLength={8}
+        />
 
         <button
           onClick={handleSubmit}

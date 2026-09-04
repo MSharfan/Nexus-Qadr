@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import pool from "../config/db.js";
+import { sendEmail } from "../utils/email.js";
 import {
   PASSWORD_REQUIREMENTS_MESSAGE,
   validateStrongPassword,
@@ -54,9 +55,22 @@ export const forgotPassword = async (req, res) => {
       [user.id, hashedToken, expiresAt]
     );
 
-    // TODO: Send email with reset link
-    // Example:
-    // https://yourapp.com/reset-password?token=${rawToken}
+    // Send password reset email (best-effort)
+    try {
+      const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+      // Frontend route expects /reset-password/:token
+      const resetUrl = `${frontendUrl}/reset-password/${rawToken}`;
+
+      await sendEmail({
+        to: user.email,
+        subject: "Password reset request",
+        html: `<p>Hi,</p><p>Click the link to reset your password: <a href="${resetUrl}">Reset password</a></p><p>If you didn't request this, ignore this email.</p><hr/><p>Or copy this token into the reset page if the link doesn't work:</p><pre>${rawToken}</pre>`,
+        text: `Reset your password: ${resetUrl}\n\nIf the link doesn't work, use this token: ${rawToken}`,
+      });
+    } catch (emailErr) {
+      console.error("Failed to send reset email:", emailErr);
+      // proceed without failing to avoid email enumeration leaks
+    }
 
     res.json({
       message: "If email exists, reset link has been sent",

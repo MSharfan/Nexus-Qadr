@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 /* ---------- PRE-AUTH ---------- */
 import OnboardingScreen from "./components/preauth/OnboardingScreen";
 import AuthPage from "./components/preauth/AuthPage";
+import VerifyEmailPage from "./components/preauth/VerifyEmailPage";
 import ForgotPassword from "./components/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./components/auth/ResetPasswordPage";
 
@@ -65,6 +66,7 @@ export default function App() {
 
         <Route path="/onboarding" element={<OnboardingScreen />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/verify" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 

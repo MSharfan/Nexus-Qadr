@@ -12,8 +12,8 @@ const AdminRegister: React.FC = () => {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [setupKey, setSetupKey] = React.useState(() => sessionStorage.getItem("admin_setup_key") || "");
-  const [isUnlocked, setIsUnlocked] = React.useState(Boolean(sessionStorage.getItem("admin_setup_key")));
+  const [setupKey, setSetupKey] = React.useState("");
+  const [isUnlocked, setIsUnlocked] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -30,7 +30,6 @@ const AdminRegister: React.FC = () => {
     try {
       setLoading(true);
       await authApi.validateAdminSetupKey(trimmedKey);
-      sessionStorage.setItem("admin_setup_key", trimmedKey);
       setIsUnlocked(true);
     } catch (err: any) {
       setError(err?.message || "Invalid admin setup key");
@@ -67,7 +66,6 @@ const AdminRegister: React.FC = () => {
         role: "admin",
         setupKey: trimmedKey,
       });
-      sessionStorage.removeItem("admin_setup_key");
       try {
         const { toast } = await import("sonner");
         toast.success("Admin account created. Please sign in.");
@@ -173,19 +171,6 @@ const AdminRegister: React.FC = () => {
               className="px-4 py-2 bg-[#00B0FF] text-white rounded"
             >
               {loading ? "Creating…" : "Create Admin"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                sessionStorage.removeItem("admin_setup_key");
-                setIsUnlocked(false);
-                setSetupKey("");
-                setError(null);
-              }}
-              className="px-4 py-2 border rounded"
-            >
-              Change key
             </button>
           </div>
         </form>

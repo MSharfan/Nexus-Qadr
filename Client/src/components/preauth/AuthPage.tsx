@@ -27,6 +27,8 @@ const AuthPage: React.FC = () => {
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [checkEmailSent, setCheckEmailSent] = React.useState(false);
+  const [showResend, setShowResend] = React.useState(false);
 
   /* =========================
      SUBMIT
@@ -91,11 +93,18 @@ const AuthPage: React.FC = () => {
           role,
         });
 
-        // After signup → back to login
+        // After signup → show check-email state
+        setCheckEmailSent(true);
         setMode("login");
       }
     } catch (err: any) {
-      setError(err.message || "Authentication failed");
+      const msg = err.message || "Authentication failed";
+      setError(msg);
+
+      // If login blocked due to not verified, show resend option
+      if (err.status === 403 && /verified/i.test(msg)) {
+        setShowResend(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -127,6 +136,10 @@ const AuthPage: React.FC = () => {
           </h2>
 
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+          {checkEmailSent && (
+            <p className="text-green-600 text-center mb-4">Registration successful — check your email for verification link.</p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name (Signup only) */}
@@ -247,6 +260,28 @@ const AuthPage: React.FC = () => {
 
           <div className="mt-6 text-center text-sm text-[#00B0FF] hover:underline">
           <Link to="/forgot-password">Forgot password?</Link>
+          {showResend && (
+            <div className="mt-3">
+              <button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await authApi.resendVerification(email);
+                    setError(null);
+                    setCheckEmailSent(true);
+                    setShowResend(false);
+                  } catch (e: any) {
+                    setError(e.message || "Failed to resend verification");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="text-sm text-[#00B0FF] hover:underline"
+              >
+                Resend verification email
+              </button>
+            </div>
+          )}
         </div>
 
           {/* Switch */}

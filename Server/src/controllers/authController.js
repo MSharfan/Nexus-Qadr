@@ -1,6 +1,8 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { sendEmail } from "../utils/email.js";
 import {
   PASSWORD_REQUIREMENTS_MESSAGE,
   validateStrongPassword,
@@ -110,7 +112,33 @@ export const register = async (req, res) => {
 
     await client.query("COMMIT");
 
-    return res.json({ message: "Registration successful" });
+    // Generate email verification token (raw -> hashed stored)
+    try {
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      await client.query(
+        `INSERT INTO email_verifications (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+        [userId, hashedToken, expiresAt]
+      );
+
+      const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+      const verifyUrl = `${frontendUrl}/auth/verify?token=${rawToken}`;
+
+      // Send verification email (best-effort)
+      await sendEmail({
+        to: emailNormalized,
+        subject: "Verify your email",
+        html: `<p>Hi ${name},</p><p>Please verify your email by clicking <a href="${verifyUrl}">here</a>.</p>`,
+        text: `Please verify your email: ${verifyUrl}`,
+      });
+    } catch (emailErr) {
+      console.error("Verification email error:", emailErr);
+      // Do not fail registration if email sending fails
+    }
+
+    return res.json({ message: "Registration successful; verification email sent" });
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Register error:", err);
@@ -146,6 +174,11 @@ export const login = async (req, res) => {
     }
 
     const user = userRes.rows[0];
+
+    // Require email verification
+    if (user.email_verified !== true) {
+      return res.status(403).json({ code: "EMAIL_NOT_VERIFIED", message: "Email not verified" });
+    }
 
     // 2️⃣ Verify password
     const validPassword = await bcrypt.compare(password, user.password);
@@ -183,5 +216,90 @@ export const login = async (req, res) => {
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({ message: "Login failed" });
+  }
+};
+
+/* =========================================================
+   EMAIL VERIFICATION
+========================================================= */
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "Token is required" });
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const tokenRes = await pool.query(
+      `SELECT user_id FROM email_verifications WHERE token_hash = $1 AND used = false AND expires_at > NOW()`,
+      [hashedToken]
+    );
+
+    if (tokenRes.rowCount === 0) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const userId = tokenRes.rows[0].user_id;
+
+    await pool.query("BEGIN");
+    await pool.query("UPDATE users SET email_verified = true WHERE id = $1", [userId]);
+    await pool.query("UPDATE email_verifications SET used = true WHERE token_hash = $1", [hashedToken]);
+    await pool.query("COMMIT");
+
+    return res.json({ message: "Email verified" });
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    console.error("Verify Email Error:", err);
+    return res.status(500).json({ message: "Failed to verify email" });
+  }
+};
+
+export const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const emailNormalized = String(email).trim().toLowerCase();
+
+    const userRes = await pool.query("SELECT id, name, email_verified FROM users WHERE email = $1", [emailNormalized]);
+    if (userRes.rowCount === 0) {
+      // prevent enumeration
+      return res.json({ message: "If an account exists, a verification email has been sent" });
+    }
+
+    const user = userRes.rows[0];
+    if (user.email_verified === true) {
+      return res.json({ message: "Email already verified" });
+    }
+
+    // Invalidate previous tokens
+    await pool.query("UPDATE email_verifications SET used = true WHERE user_id = $1", [user.id]);
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await pool.query(
+      `INSERT INTO email_verifications (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+      [user.id, hashedToken, expiresAt]
+    );
+
+    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+    const verifyUrl = `${frontendUrl}/auth/verify?token=${rawToken}`;
+
+    try {
+      await sendEmail({
+        to: emailNormalized,
+        subject: "Verify your email",
+        html: `<p>Hi ${user.name || "user"},</p><p>Please verify your email by clicking <a href="${verifyUrl}">here</a>.</p>`,
+        text: `Please verify your email: ${verifyUrl}`,
+      });
+    } catch (sendErr) {
+      console.error("Resend verification email error:", sendErr);
+    }
+
+    return res.json({ message: "If an account exists, a verification email has been sent" });
+  } catch (err) {
+    console.error("Resend Verification Error:", err);
+    return res.status(500).json({ message: "Failed to resend verification" });
   }
 };
