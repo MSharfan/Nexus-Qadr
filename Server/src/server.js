@@ -8,6 +8,20 @@ import passwordRoutes from "./routes/passwordRoutes.js";
 dotenv.config();
 
 const app = express();
+// ---------------- TRUST PROXY ----------------
+// When app is deployed behind a proxy/load-balancer (Heroku, Vercel, Cloud Run, etc.)
+// the upstream client IP is provided in the X-Forwarded-For header. express-rate-limit
+// requires Express to trust the proxy to read the correct client IP.
+// Enable by setting TRUST_PROXY=true in production environment, or the code will
+// enable it automatically when NODE_ENV=production.
+const enableTrustProxy = process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production";
+if (enableTrustProxy) {
+  // Trust first proxy (most providers set a single forwarder)
+  app.set("trust proxy", 1);
+  console.log("Express trust proxy enabled (trust proxy = 1)");
+} else {
+  app.set("trust proxy", false);
+}
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
