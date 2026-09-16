@@ -187,6 +187,8 @@ const HomePage: React.FC = () => {
                 ? p.name
                 : "Unnamed product",
           price: Number(p?.price ?? 0),
+          stock: Number(p?.stock ?? 0),
+          status: String(p?.status ?? (Number(p?.stock ?? 0) > 0 ? "active" : "out_of_stock")),
           image:
             typeof p?.image_url === "string"
               ? p.image_url

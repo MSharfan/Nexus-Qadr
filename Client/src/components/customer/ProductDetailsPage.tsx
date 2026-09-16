@@ -159,6 +159,8 @@ const ProductDetailsPage: React.FC = () => {
           id: String(p?.id),
           name: typeof p?.title === "string" ? p.title : (typeof p?.name === "string" ? p.name : "Unnamed product"),
           price: Number(p?.price ?? 0),
+          stock: Number(p?.stock ?? 0),
+          status: String(p?.status ?? (Number(p?.stock ?? 0) > 0 ? "active" : "out_of_stock")),
           image: typeof p?.image_url === "string" ? p.image_url : (typeof p?.image === "string" ? p.image : ""),
           base_price: p?.base_price ?? p?.price,
           final_price: p?.final_price ?? p?.price,
@@ -334,8 +336,17 @@ const ProductDetailsPage: React.FC = () => {
   /* ===========================
      CART
   =========================== */
+  const isOutOfStock = React.useMemo(() => {
+    if (!product) return false;
+    return Number(product.stock ?? 0) <= 0 || String(product.status ?? "").toLowerCase() === "out_of_stock";
+  }, [product]);
+
   const handleAddToCart = async () => {
     if (!product) return;
+    if (isOutOfStock) {
+      toastError("This product is out of stock");
+      return;
+    }
 
     try {
       if (sizes.length > 0 && !selectedSize) {
@@ -348,7 +359,7 @@ const ProductDetailsPage: React.FC = () => {
       }
       await cartApi.add({
         product_id: product.id,
-        quantity,   
+        quantity,
         size: selectedSize || undefined,
         color: selectedColor || undefined,
       });
@@ -679,16 +690,26 @@ const ProductDetailsPage: React.FC = () => {
                 {/* Actions */}
                 <div className="flex gap-3 mb-6">
                   <button
-                    onClick={handleAddToCart}
-                    disabled={activeRole !== "customer"}
+                    onClick={() => {
+                      if (activeRole !== "customer") {
+                        navigate("/auth");
+                        return;
+                      }
+                      handleAddToCart();
+                    }}
+                    disabled={isOutOfStock}
                     className={`flex-1 border-2 py-4 rounded-xl flex items-center justify-center gap-2 ${
-                      activeRole === "customer"
+                      activeRole === "customer" && !isOutOfStock
                         ? "bg-white dark:bg-[#0A0A0A] border-[#0D47A1] text-[#0D47A1] dark:text-[#00B0FF] dark:border-[#00B0FF]"
                         : "bg-secondary border-border text-muted-foreground cursor-not-allowed"
                     }`}
                   >
                     <ShoppingCart className="w-5 h-5" />
-                    {activeRole === "customer" ? "Add to Cart" : "Only customers can add to cart"}
+                    {isOutOfStock
+                      ? "Out of Stock"
+                      : activeRole === "customer"
+                        ? "Add to Cart"
+                        : "Sign in to add to cart"}
                   </button>
 
                   <button

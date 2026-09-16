@@ -62,6 +62,7 @@ const SellerProductsPage: React.FC = () => {
                   onClick={async () => {
                     try {
                       await request(`/product/${id}`, { method: "DELETE" });
+                      sessionStorage.removeItem("nexus_qadr_home_cache_v1");
                       setProducts((prev) => prev.filter((p) => p.id !== id));
                       toast.success("Product deleted");
                     } catch (err) {

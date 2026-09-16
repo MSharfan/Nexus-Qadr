@@ -157,18 +157,34 @@ export const productApi = {
   getAll: (query?: string) =>
     request<any[]>(query ? `/product?${query}` : "/product"),
 
+  getSellerById: (id: string) =>
+    request<any>(`/product/seller/${id}`, { allowNotFound: true }),
+
   getById: async (id: string) => {
-    try {
-      return await request<any>(`/product/${id}`);
-    } catch (err: any) {
-      if (err.status === 404) {
-        const all = await request<any[]>("/product");
-        const found = all.find((p) => String(p.id) === String(id));
-        if (!found) throw err;
-        return found;
+    const hasToken = Boolean(getToken());
+
+    if (hasToken) {
+      try {
+        const sellerProduct = await request<any>(`/product/seller/${id}`, {
+          allowNotFound: true,
+        });
+
+        if (sellerProduct) return sellerProduct;
+      } catch (err: any) {
+        if (err?.status !== 401 && err?.status !== 403) throw err;
       }
-      throw err;
     }
+
+    const publicProduct = await request<any>(`/product/${id}`, {
+      allowNotFound: true,
+      auth: false,
+    });
+
+    if (publicProduct) return publicProduct;
+
+    const err: ApiError = new Error("Product not found");
+    err.status = 404;
+    throw err;
   },
   toggleTrending: (id: string, is_trending: boolean) =>
     request(`/admin/product/${id}/trending`, { method: "PUT", body: { is_trending } }),

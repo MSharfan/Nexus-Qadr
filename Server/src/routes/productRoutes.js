@@ -7,6 +7,7 @@ import {
   updateProduct,
   deleteProduct,
   getSellerProducts,
+  getSellerProductById,
   getProductById,
   getAllProducts,
   updateProductStatus,
@@ -58,6 +59,7 @@ router.put("/:id", verifyToken, sellerOnly, updateProduct);
 router.patch("/:id/status", verifyToken, sellerOnly, updateProductStatus);
 router.delete("/:id", verifyToken, sellerOnly, deleteProduct);
 router.get("/seller", verifyToken, sellerOnly, getSellerProducts);
+router.get("/seller/:id", verifyToken, sellerOnly, getSellerProductById);
 
 // Public: single product (keep before the list route)
 router.get("/:id", getProductById);

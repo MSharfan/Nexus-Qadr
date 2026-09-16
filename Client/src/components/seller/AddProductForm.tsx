@@ -3,13 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, X, Save, Edit3 } from "lucide-react";
 import TuiImageEditor from "tui-image-editor";
 import "tui-image-editor/dist/tui-image-editor.css";
-import "tui-color-picker/dist/tui-color-picker.css";
 
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
-import { request } from "../../config/api";
-import { categoryApi } from "../../config/api";
+import { request, productApi, categoryApi } from "../../config/api";
 import { useToast } from "../ui/ToastProvider";
+
+const HOME_PAGE_CACHE_KEY = "nexus_qadr_home_cache_v1";
 
 const AddProductPage: React.FC = () => {
   const navigate = useNavigate();
@@ -160,7 +160,10 @@ const AddProductPage: React.FC = () => {
     const loadProduct = async () => {
       try {
         setLoadingProduct(true);
-        const data = await request<any>(`/product/${productId}`);
+        const data = await productApi.getById(productId);
+        if (!data) {
+          throw Object.assign(new Error("Product not found"), { status: 404 });
+        }
         setFormData({
           name: data.title ?? data.name ?? "",
           description: data.description ?? "",
@@ -188,7 +191,17 @@ const AddProductPage: React.FC = () => {
           ? data.extra_image_urls.filter(Boolean)
           : [];
         setExistingExtraUrls(extraUrls);
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.status === 404) {
+          toast({
+            type: "error",
+            title: "Product unavailable",
+            description: "This product no longer exists or is not editable.",
+          });
+          navigate("/seller/products", { replace: true });
+          return;
+        }
+
         console.error("Failed to load product", err);
         toast({ type: "error", title: "Failed to load product", description: "Unable to fetch product details." });
         navigate("/seller/products", { replace: true });
@@ -267,6 +280,7 @@ const AddProductPage: React.FC = () => {
             height_cm: Number(formData.heightCm),
           },
         });
+        sessionStorage.removeItem(HOME_PAGE_CACHE_KEY);
         toast({ type: "success", title: "Product updated", description: "Your product was updated successfully" });
         navigate("/seller/products", { replace: true });
       } else {
@@ -295,6 +309,7 @@ const AddProductPage: React.FC = () => {
             height_cm: Number(formData.heightCm),
           },
         });
+        sessionStorage.removeItem(HOME_PAGE_CACHE_KEY);
         toast({ type: "success", title: "Product added", description: "Your product was added successfully" });
         navigate("/seller/products", { replace: true });
       }

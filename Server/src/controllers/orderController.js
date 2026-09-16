@@ -687,7 +687,16 @@ export const cancelOrder = async (req, res) => {
     // restore stocks for items
     const itemsQ = await client.query(`SELECT product_id, quantity FROM order_items WHERE order_id = $1`, [order_id]);
     for (const it of itemsQ.rows) {
-      await client.query(`UPDATE products SET stock = stock + $1 WHERE id = $2`, [it.quantity, it.product_id]);
+      await client.query(
+        `UPDATE products
+         SET stock = stock + $1,
+             status = CASE
+               WHEN status = 'out_of_stock' AND stock + $1 > 0 THEN 'active'
+               ELSE status
+             END
+         WHERE id = $2`,
+        [it.quantity, it.product_id]
+      );
     }
 
     await client.query('COMMIT');

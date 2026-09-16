@@ -1,8 +1,8 @@
 {
   "title": "Limited Time Sales",
   "subtitle": "Fresh deals from verified sellers are live now.",
-  "is_enabled": false,
-  "show_banner": false,
+  "is_enabled": true,
+  "show_banner": true,
   "gradientFrom": "#0A0A0A",
   "gradientTo": "#00B0FF",
   "image_url": "https://res.cloudinary.com/dlrnpbjza/image/upload/v1/nexus_qadr_products/nn4siyvysne6kp78sj47?_a=BAMAPqIM0",
@@ -72,6 +72,6 @@
   "banner_border_width": 0,
   "banner_opacity": 100,
   "animation": "float",
-  "updated_at": "2026-08-21T18:31:36.976Z",
-  "enabled": true
+  "updated_at": "2026-09-07T18:37:23.362Z",
+  "enabled": false
 }

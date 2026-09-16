@@ -8,6 +8,8 @@ export interface Product {
   name: string;
   price: number;
   image: string;
+  stock?: number;
+  status?: string;
   category?: string;
   categoryIds?: string[];
   trending?: boolean;
@@ -79,6 +81,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
   const isSeller = role === 'seller';
+  const isOutOfStock = Number(product.stock ?? 0) <= 0 || String(product.status ?? "").toLowerCase() === "out_of_stock";
 
   // Pricing helpers: compute base, final and saved amount consistently
   const basePrice = Number(product.base_price ?? product.price ?? 0);
@@ -104,6 +107,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {product.trending && (
         <div className="absolute left-3 top-3 z-10 bg-[#00B0FF] text-white text-xs px-2 py-1 rounded-full">
           Trending
+        </div>
+      )}
+
+      {isOutOfStock && (
+        <div className="absolute right-3 top-3 z-10 bg-red-600 text-white text-[10px] px-2 py-1 rounded-full font-medium">
+          Out of stock
         </div>
       )}
 
@@ -184,12 +193,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (isSeller) return; // sellers cannot add to cart
+                  if (isSeller || isOutOfStock) return;
                   onAddToCart(product);
                 }}
-                aria-label="Add to cart"
-                disabled={isSeller}
-                className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full ${isSeller ? 'bg-secondary text-muted-foreground cursor-not-allowed' : 'bg-gradient-to-r from-[#0D47A1] to-[#00B0FF] text-white'} flex items-center justify-center shadow-lg transition-transform hover:scale-105`}
+                aria-label={isOutOfStock ? "Out of stock" : "Add to cart"}
+                disabled={isSeller || isOutOfStock}
+                className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full ${isSeller || isOutOfStock ? 'bg-secondary text-muted-foreground cursor-not-allowed' : 'bg-gradient-to-r from-[#0D47A1] to-[#00B0FF] text-white'} flex items-center justify-center shadow-lg transition-transform ${isSeller || isOutOfStock ? '' : 'hover:scale-105'}`}
               >
                 <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>

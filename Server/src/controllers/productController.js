@@ -142,16 +142,19 @@ export const addProduct = async (req, res) => {
 
     const cloudinary_ids_string = JSON.stringify(cloudinaryIdsArray);
 
+    const computedStatus = Number(stock) > 0 ? "active" : "out_of_stock";
+
     const insertQ = await pool.query(
       `INSERT INTO products
         (title, description, price, stock, status, category_id, seller_id, image_url, cloudinary_id, weight_kg, length_cm, width_cm, height_cm, discount_percent, created_at)
-       VALUES ($1,$2,$3,$4,'active',$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW())
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW())
        RETURNING *`,
       [
         title.trim(),
         description || "",
         price,
         stock,
+        computedStatus,
         primaryCategoryId,
         seller_id,
         image_url,
@@ -280,6 +283,16 @@ export const updateProduct = async (req, res) => {
       }
       fields.push(`stock = $${i++}`);
       values.push(stock);
+
+      const nextStock = Number(stock);
+      const currentStatus = String(oldProduct.status || "active");
+      if (nextStock <= 0) {
+        fields.push(`status = $${i++}`);
+        values.push("out_of_stock");
+      } else if (currentStatus === "out_of_stock") {
+        fields.push(`status = $${i++}`);
+        values.push("active");
+      }
     }
 
     const packageFields = [
@@ -454,9 +467,17 @@ export const updateProductStatus = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    const current = await pool.query(
+      "SELECT stock FROM products WHERE id = $1 AND seller_id = $2",
+      [product_id, seller_id]
+    );
+
+    const currentStock = Number(current.rows[0]?.stock ?? 0);
+    const finalStatus = status === "active" && currentStock <= 0 ? "out_of_stock" : status;
+
     const q = await pool.query(
       "UPDATE products SET status = $1 WHERE id = $2 RETURNING *",
-      [status, product_id]
+      [finalStatus, product_id]
     );
 
     res.json({
@@ -545,6 +566,72 @@ export const getSellerProducts = async (req, res) => {
 };
 
 /* ============================================================
+   GET SELLER PRODUCT BY ID (PRIVATE)
+============================================================ */
+export const getSellerProductById = async (req, res) => {
+  try {
+    await ensureProductShippingColumns();
+
+    const seller_id = req.user.id;
+    const product_id = req.params.id;
+
+    const q = await pool.query(
+      `SELECT
+         p.*,
+         c.name AS category_name,
+         array_agg(DISTINCT pc.category_id) FILTER (WHERE pc.category_id IS NOT NULL) AS category_ids,
+         array_agg(DISTINCT c2.name) FILTER (WHERE c2.name IS NOT NULL) AS category_names
+       FROM products p
+       LEFT JOIN categories c ON p.category_id = c.id
+       LEFT JOIN product_categories pc ON pc.product_id = p.id
+       LEFT JOIN categories c2 ON c2.id = pc.category_id
+       WHERE p.id = $1 AND p.seller_id = $2
+       GROUP BY p.id, c.name`,
+      [product_id, seller_id]
+    );
+
+    if (q.rows.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const row = q.rows[0];
+    const sizeQ = await pool.query(
+      `SELECT
+         size,
+         price,
+         discount_percent,
+         COALESCE(price, $2::numeric) AS base_price,
+         ROUND((COALESCE(price, $2::numeric) * (1 - COALESCE(NULLIF(discount_percent, 0), $3::numeric, 0) / 100.0))::numeric, 2) AS final_price
+       FROM product_sizes
+       WHERE product_id = $1
+       ORDER BY size`,
+      [product_id, Number(row.price ?? 0), parseDiscountPercent(row.discount_percent)]
+    );
+    const colorQ = await pool.query(
+      "SELECT color FROM product_colors WHERE product_id = $1 ORDER BY color",
+      [product_id]
+    );
+    const ids = parseCloudinaryIds(row.cloudinary_id);
+    const extraIds = ids.slice(1);
+    const extra_images = extraIds.map((id) => ({
+      public_id: id,
+      image_url: cloudinary.url(id, { secure: true }),
+    }));
+
+    res.json({
+      ...row,
+      extra_images,
+      sizes: sizeQ.rows.map((r) => r.size),
+      size_prices: sizeQ.rows,
+      colors: colorQ.rows.map((r) => r.color),
+    });
+  } catch (err) {
+    console.error("Get Seller Product By ID Error:", err);
+    res.status(500).json({ message: "Failed to fetch product" });
+  }
+};
+
+/* ============================================================
    GET ALL PRODUCTS (PUBLIC)
 ============================================================ */
 export const getAllProducts = async (req, res) => {
@@ -553,7 +640,7 @@ export const getAllProducts = async (req, res) => {
 
     const { category, limit = 20, offset = 0 } = req.query;
 
-    let whereClause = `WHERE p.status = 'active'`;
+    let whereClause = `WHERE p.status IN ('active', 'out_of_stock')`;
     const values = [];
 
     // Category filter (optional)
@@ -620,7 +707,7 @@ export const getProductById = async (req, res) => {
        LEFT JOIN categories c ON p.category_id = c.id
        LEFT JOIN product_categories pc ON pc.product_id = p.id
        LEFT JOIN categories c2 ON c2.id = pc.category_id
-       WHERE p.id = $1 AND p.status = 'active'
+       WHERE p.id = $1 AND p.status IN ('active', 'out_of_stock')
        GROUP BY p.id, c.name`
       , [product_id]
     );
